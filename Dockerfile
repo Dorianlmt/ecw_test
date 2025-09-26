@@ -1,25 +1,19 @@
-# Dockerfile (copier à la racine du repo)
+# Dockerfile for Node + Prisma + Postgres
 FROM node:18
 
 WORKDIR /usr/src/app
 
-# Copy package files first for caching
+# Install system deps (if any)
+RUN apt-get update && apt-get install -y build-essential openssl ca-certificates
+
 COPY package.json package-lock.json* ./
+RUN npm install --production
 
-# Install dependencies (including prisma for build time)
-RUN npm install --production=false
-
-# Copy prisma schema first to ensure availability
-COPY prisma ./prisma
-
-# Copy rest of app
+# Copy app
 COPY . .
 
-# Optional debug: list files (décommenter si besoin)
-# RUN ls -la /usr/src/app && ls -la /usr/src/app/prisma
-
-# Generate Prisma client explicitly pointing to schema
-RUN npx prisma generate --schema=./prisma/schema.prisma
+# Generate Prisma client (after copying schema)
+RUN npx prisma generate
 
 EXPOSE 3000
 CMD ["npm", "start"]
